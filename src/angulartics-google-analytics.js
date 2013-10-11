@@ -1,5 +1,5 @@
 /**
- * @license Angulartics v0.8.5
+ * @license Angulartics v0.8.4
  * (c) 2013 Luis Farzati http://luisfarzati.github.io/angulartics
  * Universal Analytics update contributed by http://github.com/willmcclellan
  * License: MIT
@@ -26,6 +26,10 @@ angular.module('angulartics.google.analytics', ['angulartics'])
   $analyticsProvider.registerEventTrack(function (action, properties) {
     if (window._gaq) _gaq.push(['_trackEvent', properties.category, action, properties.label, properties.value]);
     if (window.ga) ga('send', 'event', properties.category, action, properties.label, properties.value);
+  });
+
+  $analyticsProvider.registerDimensionValue(function (name, value) {
+    if (window.ga) ga('set', name, value);
   });
   
 }]);

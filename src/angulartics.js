@@ -1,5 +1,5 @@
 /**
- * @license Angulartics v0.8.5
+ * @license Angulartics v0.8.4
  * (c) 2013 Luis Farzati http://luisfarzati.github.io/angulartics
  * License: MIT
  */
@@ -26,10 +26,12 @@ angular.module('angulartics', [])
     pageTracking: { 
       autoTrackFirstPage: true,
       autoTrackVirtualPages: true,
-      basePath: '',
       bufferFlushDelay: 1000 
     },
     eventTracking: {
+      bufferFlushDelay: 1000
+    },
+    dimensionValue: {
       bufferFlushDelay: 1000
     } 
   };
@@ -45,11 +47,15 @@ angular.module('angulartics', [])
   var bufferedEventTrack = function (event, properties) {
     cache.events.push({name: event, properties: properties});
   };
+  var bufferedDimensionValue = function (name, value) {
+    cache.events.push(name,value);
+  };
 
   var api = {
     settings: settings,
     pageTrack: bufferedPageTrack,
-    eventTrack: bufferedEventTrack
+    eventTrack: bufferedEventTrack,
+    dimensionValue: bufferedEventTrack
   };
 
   var registerPageTrack = function (fn) {
@@ -64,15 +70,22 @@ angular.module('angulartics', [])
       setTimeout(function () { api.eventTrack(event.name, event.properties); }, index * settings.eventTracking.bufferFlushDelay);
     });
   };
+  var registerDimensionValue = function (fn) {
+    api.dimensionValue = fn;
+    angular.forEach(cache.events, function (event, index) {
+      setTimeout(function () { api.eventTrack(event.name, event.properties); }, index * settings.dimensionValue.bufferFlushDelay);
+    });
+  };
+
 
   return {
     $get: function() { return api; },
     settings: settings,
     virtualPageviews: function (value) { this.settings.pageTracking.autoTrackVirtualPages = value; },
     firstPageview: function (value) { this.settings.pageTracking.autoTrackFirstPage = value; },
-    withBase: function (value) { this.settings.pageTracking.basePath = (value) ? angular.element('base').attr('href').slice(0, -1) : ''; },
     registerPageTrack: registerPageTrack,
-    registerEventTrack: registerEventTrack
+    registerEventTrack: registerEventTrack,
+    registerDimensionValue: registerDimensionValue
   };
 })
 
@@ -83,8 +96,7 @@ angular.module('angulartics', [])
   if ($analytics.settings.pageTracking.autoTrackVirtualPages) {
     $rootScope.$on('$routeChangeSuccess', function (event, current) {
       if (current && (current.$$route||current).redirectTo) return;
-      var url = $analytics.settings.pageTracking.basePath + $location.url();
-      $analytics.pageTrack(url);
+      $analytics.pageTrack($location.url());
     });
   }
 }])
